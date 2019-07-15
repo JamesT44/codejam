@@ -1,0 +1,69 @@
+#PyPy2
+def query(x, rmq, start, stop):
+    j = (stop - start).bit_length() - 1
+    a, b = rmq[j][start], rmq[j][stop - 2 ** j]
+    return a if x[a] >= x[b] else b
+
+
+t = int(raw_input())
+for ti in xrange(1, t + 1):
+    n, k = map(int, raw_input().split())
+    c, d = list(map(int, raw_input().split())), list(map(int, raw_input().split()))
+    rmqc, rmqd = [list(xrange(n))], [list(xrange(n))]
+    for step in xrange(1, n.bit_length()):
+        j = (1 << (step - 1))
+        ncstep, ndstep = [], []
+        for i in xrange(n):
+            if j < n:
+                a, b = rmqc[-1][i], rmqc[-1][j]
+                ncstep.append(a if c[a] >= c[b] else b)
+                a, b = rmqd[-1][i], rmqd[-1][j]
+                ndstep.append(a if d[a] >= d[b] else b)
+            else:
+                ncstep.append(rmqc[-1][i])
+                ndstep.append(rmqd[-1][i])
+            j += 1
+        rmqc.append(ncstep)
+        rmqd.append(ndstep)
+
+    res = 0
+    for i, ci in enumerate(c):
+        cu, cd = ci + k, ci - k
+        l, r = 0, i
+        while l < r:
+            m = (l + r) // 2
+            if query(c, rmqc, m, i + 1) == i and d[query(d, rmqd, m, i + 1)] < cd:
+                r = m
+            else:
+                l = m + 1
+        l2 = l
+        l, r = i, n - 1
+        while l < r:
+            m = (l + r + 1) // 2
+            if query(c, rmqc, i, m + 1) == i and d[query(d, rmqd, i, m + 1)] < cd:
+                l = m
+            else:
+                r = m - 1
+        r2 = l
+        l, r = 0, l2
+        while l < r:
+            m = (l + r) // 2
+            if query(c, rmqc, m, i + 1) == i and d[query(d, rmqd, m, i + 1)] <= cu:
+                r = m
+            else:
+                l = m + 1
+        l1 = l
+        l, r = r2, n - 1
+        while l < r:
+            m = (l + r + 1) // 2
+            if query(c, rmqc, i, m + 1) == i and d[query(d, rmqd, i, m + 1)] <= cu:
+                l = m
+            else:
+                r = m - 1
+        r1 = l
+        if l1 == r1 and d[l1] > ci + k:
+            l1 += 1
+        if l2 == r2 and d[l2] >= ci - k:
+            l2 += 1
+        res += (i - l1 + 1) * (r1 - i + 1) - (i - l2 + 1) * (r2 - i + 1)
+    print "Case #%d: %d" % (ti, res)
